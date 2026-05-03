@@ -12,12 +12,31 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasApiTokens, HasUuids;
+
+
+    protected $fillable = [
+        'email',
+        'password',
+        'name',
+        'phone',
+        'role',
+        'status',
+        'avatar',
+        'ward_code',
+        'detail_address',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
     /**
      * Get the attributes that should be cast.
@@ -30,5 +49,30 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function ward()
+    {
+        return $this->belongsTo(Ward::class, 'ward_code', 'code');
+    }
+
+
+    public function getWardNameAttribute()
+    {
+        return $this->ward ? $this->ward->name : null;
+    }
+
+    public function getProvinceNameAttribute()
+    {
+        return $this->ward && $this->ward->province ? $this->ward->province->name : null;
+    }
+
+    public function userOauth(){
+        return $this->hasMany(UserOauth::class, 'user_id', 'id');
+    }
+
+    public function isVerified(): bool
+    {
+        return $this->email_verified_at !== null;
     }
 }

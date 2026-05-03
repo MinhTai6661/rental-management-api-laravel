@@ -1,0 +1,31 @@
+FROM dunglas/frankenphp:latest-php8.3-alpine
+
+# Cài đặt các extension cần thiết cho Laravel & Postgres/Redis
+RUN install-php-extensions \
+    pcntl \
+    bcmath \
+    gd \
+    intl \
+    zip \
+    opcache \
+    pdo_pgsql \
+    pgsql \
+    redis
+
+# Cài đặt Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Thiết lập thư mục làm việc
+WORKDIR /app
+
+# Copy toàn bộ code vào container
+COPY . .
+
+# Cấp quyền cho storage và bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache
+
+# Expose cổng 8000 cho FrankenPHP
+EXPOSE 8000
+
+# Chạy FrankenPHP
+CMD ["php", "artisan", "octane:start", "--server=frankenphp", "--host=0.0.0.0", "--port=8000"]

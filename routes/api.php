@@ -1,41 +1,29 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Validation\ValidationException;
-use Laravel\Sanctum\PersonalAccessToken;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
-
-Route::post('/login', [AuthController::class, 'login'])->name('login');
-
-Route::post('/tokens/create', function (Request $request) {
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-        'token_name' => 'required',
-    ]);
-
-    // 2. Tìm user theo email
-    $user = User::where('email', $request->email)->first();
-
-    // 3. Kiểm tra user tồn tại và mật khẩu khớp
-    if (! $user || ! Hash::check($request->password, $user->password)) {
-        throw ValidationException::withMessages([
-            'email' => ['Thông tin đăng nhập không chính xác.'],
-        ]);
-    }
-    // 4. Bây giờ mới tạo Token từ đối tượng $user đã tìm thấy
-    $token = $user->createToken($request->token_name);
-
-    return ['token' => $token->plainTextToken];
+Route::group(['prefix' => 'auth'], function () {
+    Route::post('/login', [AuthController::class, 'login'])->name('login');
+    Route::get('/google', [AuthController::class, 'redirectToGoogle'])->name('google.redirect');
+    Route::get('/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('google.callback');
+    Route::post('/register', [AuthController::class, 'register'])->name('register');
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot-password');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('reset-password');
+    Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
+Route::group(['prefix' => 'profile', 'middleware' => ['auth:sanctum']], function () {
+    Route::get('/', [UserController::class, 'users']);
+    Route::put('/update', [UserController::class, 'updateProfile']);
+});
 
-Route::middleware('auth:sanctum')->get('/my-secret-rooms', [AuthController::class, 'index']);
+Route::middleware('role:' . UserRole::SUPER_ADMIN->value)->group(function () {
+    Route::get('/users', [UserController::class, 'users']);
+    Route::get('/my-secret-rooms', [AuthController::class, 'index']);
+});

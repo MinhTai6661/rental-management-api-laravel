@@ -1,0 +1,66 @@
+services:
+  # Ứng dụng Laravel (chạy FrankenPHP + Octane)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: myrent_app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - .:/app
+    env_file:
+        - .env
+    depends_on:
+      - db
+      - redis
+    networks:
+      - myrent_network
+
+  # Cơ sở dữ liệu PostgreSQL 16
+  db:
+    image: postgres:16-alpine
+    container_name: myrent_db
+    restart: unless-stopped
+    env_file:
+        - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - myrent_network
+
+  # Bộ nhớ đệm Redis
+  redis:
+    image: redis:alpine
+    container_name: myrent_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - myrent_network
+
+  # Worker xử lý Queue (Gửi mail xác thực, v.v.)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: myrent_worker
+    restart: unless-stopped
+    command: php artisan queue:work --verbose --tries=3 --timeout=90
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    networks:
+      - myrent_network
+
+networks:
+  myrent_network:
+    driver: bridge
+
+volumes:
+  db_data:

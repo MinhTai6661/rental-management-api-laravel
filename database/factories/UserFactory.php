@@ -25,7 +25,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
 
-        $wardId = \DB::table('wards')->inRandomOrder()->value('code');
+        $ward_code = \DB::table('wards')->inRandomOrder()->value('code');
         return [
             'id' => (string) Str::uuid(),
             'name' => fake()->name(),
@@ -34,8 +34,8 @@ class UserFactory extends Factory
             'role' => 'user',
             'status' => 'active',
             'phone' => fake()->phoneNumber(),
-            'wardId' => $wardId,
-            'detailAddress' => fake()->streetAddress(),
+            'ward_code' => $ward_code,
+            'detail_address' => fake()->streetAddress(),
         ];
     }
 

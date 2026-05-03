@@ -70,13 +70,13 @@ return new class extends Migration
             $table->enum('role', ['super_admin', 'admin', 'user'])->default('user');
             $table->enum('status', ['active', 'inactive', 'pending_approval'])->default('active');
             $table->string('avatar', 255)->nullable();
-            $table->integer('wardId')->nullable();
-            $table->text('detailAddress')->nullable();
+            $table->integer('ward_code')->nullable();
+            $table->text('detail_address')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('wardId')->references('code')->on('wards')->onDelete('set null');
+            $table->foreign('ward_code')->references('code')->on('wards')->onDelete('set null');
         });
 
         Schema::create('plans', function (Blueprint $table) {
@@ -85,7 +85,7 @@ return new class extends Migration
             $table->string('name', 255);
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2);
-            $table->integer('maxRooms');
+            $table->integer('max_rooms');
             $table->integer('flags')->default(0);
             $table->json('channels')->nullable();
             $table->timestamps();
@@ -98,98 +98,98 @@ return new class extends Migration
             $table->text('address');
             $table->text('description')->nullable();
             $table->string('image', 255)->nullable();
-            $table->uuid('adminId');
+            $table->uuid('admin_id');
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('adminId')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('admin_id')->references('id')->on('users')->onDelete('cascade');
         });
 
         Schema::create('rooms', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('roomNumber', 50);
+            $table->string('room_number', 50);
             $table->decimal('area', 10, 2);
-            $table->decimal('rentalPrice', 15, 2);
+            $table->decimal('rental_price', 15, 2);
             $table->text('description')->nullable();
             $table->string('image', 255)->nullable();
             $table->enum('status', ['empty', 'rented', 'repairing'])->default('empty');
-            $table->uuid('dormitoryId');
+            $table->uuid('dormitory_id');
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('dormitoryId')->references('id')->on('dormitories')->onDelete('cascade');
+            $table->foreign('dormitory_id')->references('id')->on('dormitories')->onDelete('cascade');
         });
 
         Schema::create('contracts', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('roomId');
+            $table->uuid('room_id');
             $table->uuid('tenantId');
-            $table->dateTime('startDate');
-            $table->dateTime('endDate')->nullable();
+            $table->dateTime('start_date');
+            $table->dateTime('end_date')->nullable();
             $table->enum('status', ['active', 'expired', 'terminated'])->default('active');
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('roomId')->references('id')->on('rooms')->onDelete('cascade');
+            $table->foreign('room_id')->references('id')->on('rooms')->onDelete('cascade');
             $table->foreign('tenantId')->references('id')->on('users')->onDelete('cascade');
         });
 
         Schema::create('invoices', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('contractId');
+            $table->uuid('contract_id');
             $table->decimal('amount', 15, 2);
-            $table->dateTime('dueDate');
+            $table->dateTime('due_date');
             $table->enum('status', ['draft', 'pending', 'paid', 'overdue'])->default('draft');
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('contractId')->references('id')->on('contracts')->onDelete('cascade');
+            $table->foreign('contract_id')->references('id')->on('contracts')->onDelete('cascade');
         });
 
         Schema::create('payments', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('invoiceId');
+            $table->uuid('invoice_id');
             $table->decimal('amount', 15, 2);
-            $table->dateTime('paymentDate');
+            $table->dateTime('payment_date');
             $table->string('method', 50);
             $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');
             $table->timestamps();
 
-            $table->foreign('invoiceId')->references('id')->on('invoices')->onDelete('cascade');
+            $table->foreign('invoice_id')->references('id')->on('invoices')->onDelete('cascade');
         });
 
         Schema::create('subscriptions', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('planId');
-            $table->uuid('adminId');
-            $table->dateTime('startDate');
-            $table->dateTime('endDate')->nullable();
+            $table->uuid('plan_id');
+            $table->uuid('admin_id');
+            $table->dateTime('start_date');
+            $table->dateTime('end_date')->nullable();
             $table->enum('status', ['active', 'expired', 'cancelled'])->default('active');
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('planId')->references('id')->on('plans')->onDelete('cascade');
-            $table->foreign('adminId')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('plan_id')->references('id')->on('plans')->onDelete('cascade');
+            $table->foreign('admin_id')->references('id')->on('users')->onDelete('cascade');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->increments('id');
-            $table->uuid('userId');
+            $table->uuid('user_id');
             $table->string('token', 500);
-            $table->dateTime('expiresAt');
+            $table->dateTime('expires_at');
             $table->timestamps();
 
-            $table->foreign('userId')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
 
         Schema::create('user_oauth', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('userId');
+            $table->id();
+            $table->uuid('user_id');
             $table->enum('provider', ['google', 'zalo', 'facebook']);
-            $table->string('providerUserId', 255);
+            $table->string('provider_id', 255);
             $table->timestamps();
 
-            $table->foreign('userId')->references('id')->on('users')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade')->onUpdate('cascade');
         });
 
 

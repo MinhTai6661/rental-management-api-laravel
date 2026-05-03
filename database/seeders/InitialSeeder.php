@@ -59,8 +59,8 @@ class InitialSeeder extends Seeder
                 'role' => 'super_admin',
                 'status' => 'active',
                 'phone' => '+84901234567',
-                'wardId' => $wardCodes[array_rand($wardCodes)] ?? null,
-                'detailAddress' => '123 Đường Nguyễn Huệ',
+                'ward_code' => $wardCodes[array_rand($wardCodes)] ?? null,
+                'detail_address' => '123 Đường Nguyễn Huệ',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -72,8 +72,8 @@ class InitialSeeder extends Seeder
                 'role' => 'admin',
                 'status' => 'active',
                 'phone' => '+84902345678',
-                'wardId' => $wardCodes[array_rand($wardCodes)] ?? null,
-                'detailAddress' => '456 Đường Lê Lợi',
+                'ward_code' => $wardCodes[array_rand($wardCodes)] ?? null,
+                'detail_address' => '456 Đường Lê Lợi',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -85,8 +85,8 @@ class InitialSeeder extends Seeder
                 'role' => 'user',
                 'status' => 'active',
                 'phone' => '+84903456789',
-                'wardId' => $wardCodes[array_rand($wardCodes)] ?? null,
-                'detailAddress' => '789 Đường Thạch Thị Thanh',
+                'ward_code' => $wardCodes[array_rand($wardCodes)] ?? null,
+                'detail_address' => '789 Đường Thạch Thị Thanh',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -106,7 +106,7 @@ class InitialSeeder extends Seeder
         // Chia nhỏ thành 10 đợt, mỗi đợt 1000 user để không treo RAM
         foreach (range(1, 10) as $i) {
             \App\Models\User::factory()->count(100)->create([
-                'wardId' => function () use ($wardCodes) {
+                'ward_code' => function () use ($wardCodes) {
                     return $wardCodes[array_rand($wardCodes)];
                 }
             ]);
@@ -123,7 +123,7 @@ class InitialSeeder extends Seeder
                 'name' => 'Free Plan',
                 'description' => 'Basic plan for getting started',
                 'price' => 0,
-                'maxRooms' => 5,
+                'max_rooms' => 5,
                 'flags' => 1,
                 'channels' => json_encode([]),
                 'created_at' => now(),
@@ -135,7 +135,7 @@ class InitialSeeder extends Seeder
                 'name' => 'Professional Plan',
                 'description' => 'Perfect for growing property managers',
                 'price' => 99.99,
-                'maxRooms' => 50,
+                'max_rooms' => 50,
                 'flags' => 3,
                 'channels' => json_encode(['email', 'sms']),
                 'created_at' => now(),
@@ -147,7 +147,7 @@ class InitialSeeder extends Seeder
                 'name' => 'Ultra Plan',
                 'description' => 'Enterprise solution with unlimited features',
                 'price' => 499.99,
-                'maxRooms' => 999,
+                'max_rooms' => 999,
                 'flags' => 7,
                 'channels' => json_encode(['email', 'sms', 'push']),
                 'created_at' => now(),
@@ -157,15 +157,15 @@ class InitialSeeder extends Seeder
         DB::table('plans')->insert($plans);
 
         // Seed dormitory
-        $adminId = $users[1]['id'];
-        $dormitoryId = (string) Str::uuid();
+        $admin_id = $users[1]['id'];
+        $dormitory_id = (string) Str::uuid();
         DB::table('dormitories')->insert([
-            'id' => $dormitoryId,
+            'id' => $dormitory_id,
             'name' => 'Modern Apartment Complex A',
             'address' => '123 Main Street, District 1, Ho Chi Minh City',
             'description' => 'Modern apartment with excellent amenities',
             'image' => 'https://example.com/dorm1.jpg',
-            'adminId' => $adminId,
+            'admin_id' => $admin_id,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -174,12 +174,12 @@ class InitialSeeder extends Seeder
         for ($i = 1; $i <= 5; $i++) {
             DB::table('rooms')->insert([
                 'id' => (string) Str::uuid(),
-                'roomNumber' => "A{$i}01",
+                'room_number' => "A{$i}01",
                 'area' => 30 + $i * 5,
-                'rentalPrice' => 5000000 + $i * 500000,
+                'rental_price' => 5000000 + $i * 500000,
                 'description' => 'Spacious room with balcony',
                 'status' => $i <= 2 ? 'rented' : 'empty',
-                'dormitoryId' => $dormitoryId,
+                'dormitory_id' => $dormitory_id,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
