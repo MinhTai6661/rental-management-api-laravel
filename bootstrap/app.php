@@ -1,9 +1,7 @@
 <?php
 
-use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\CheckPermission;
 use App\Traits\ApiResponse;
-use Illuminate\Auth\AuthenticationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,15 +16,34 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => CheckRole::class,
+            'can_do' => CheckPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->respond(function ($response, Throwable $e, Request $request) {
             if ($request->is('api/*')) {
-                $data = json_decode($response->getContent(), true);
-                return ApiResponse::error($data['message'] ?? 'Error', $response->getStatusCode());
+                if ($e instanceof \Illuminate\Auth\AuthenticationException) {
+                    return ApiResponse::error(__('auth.unauthenticated'), 401);
+                }
+
+                if ($e instanceof \Illuminate\Validation\ValidationException) {
+                    return ApiResponse::error($e->validator->errors()->first(), 422);
+                }
+
+                if (
+                    $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ||
+                    $e->getPrevious() instanceof \Illuminate\Database\Eloquent\ModelNotFoundException
+                ) {
+                    return ApiResponse::error(__('general.not_found'), 404);
+                }
+
+                if ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+                    return ApiResponse::error(__('general.not_found'), 404);
+                }
+
+                return ApiResponse::error($e->getMessage() ?: 'Error', method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500);
             }
+
             return $response;
         });
     })->create();

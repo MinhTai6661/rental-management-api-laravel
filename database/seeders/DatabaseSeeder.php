@@ -2,6 +2,12 @@
 
 use Database\Seeders\InitialSeeder;
 use App\Models\User;
+use Database\Seeders\DormitorySeeder;
+use Database\Seeders\OrderResourcesSeeder;
+use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RoleSeeder;
+use Database\Seeders\RoomSeeder;
+use Database\Seeders\UserSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -17,7 +23,13 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         $this->call([
-            InitialSeeder::class,
+            // InitialSeeder::class,
+            OrderResourcesSeeder::class,
+            PermissionSeeder::class,
+            RoleSeeder::class,
+            UserSeeder::class,
+            DormitorySeeder::class,
+            RoomSeeder::class,
         ]);
 
 

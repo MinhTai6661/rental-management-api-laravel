@@ -8,4 +8,3 @@ enum UserStatus: string
     case INACTIVE = 'inactive';
     case PENDING_APPROVAL = 'pending_approval';
 }
-

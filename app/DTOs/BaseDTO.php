@@ -5,13 +5,12 @@ namespace App\DTOs;
 use Illuminate\Http\Request;
 use ReflectionProperty;
 
-readonly abstract class BaseDTO
+abstract class BaseDTO
 {
     protected const MAP = [];
-    protected static function defaults(): array
-    {
-        return [];
-    }
+
+    protected array $except = [];
+
     public function __construct(array $data)
     {
         foreach ($data as $key => $value) {
@@ -21,33 +20,36 @@ readonly abstract class BaseDTO
         }
     }
 
-    // only set properties that are present in the request, ignore missing ones
+    // only init properties that exist in request
     public static function fromRequestPartial(Request $request): static
     {
         $data = $request->validated();
-        $defaults = static::defaults();
         $init = [];
 
         foreach (static::MAP as $requestKey => $propertyName) {
             if (array_key_exists($requestKey, $data)) {
                 $init[$propertyName] = $data[$requestKey];
-            } elseif (array_key_exists($propertyName, $defaults)) {
-                $init[$propertyName] = $defaults[$propertyName];
             }
         }
 
         return new static($init);
     }
 
-    // set all properties, if missing in request, it will set null or default 
+    //  init properties that exist in request, if not exist, init with null
     public static function fromRequest(Request $request): static
     {
         $data = $request->validated();
-        $defaults = static::defaults();
         $init = [];
 
+        $reflection = new \ReflectionClass(static::class);
+        $defaultProperties = $reflection->getDefaultProperties();
+
         foreach (static::MAP as $requestKey => $propertyName) {
-            $init[$propertyName] = $data[$requestKey] ?? ($defaults[$propertyName] ?? null);
+            if (array_key_exists($requestKey, $data)) {
+                $init[$propertyName] = $data[$requestKey];
+            } else {
+                $init[$propertyName] = $defaultProperties[$propertyName] ?? null;
+            }
         }
 
         return new static($init);
@@ -57,7 +59,7 @@ readonly abstract class BaseDTO
     {
         $result = [];
         foreach (static::MAP as $requestKey => $propertyName) {
-            if ($this->isInitialized($propertyName)) {
+            if ($this->hasValue($propertyName) && ! in_array($propertyName, $this->except)) {
                 $result[$requestKey] = $this->{$propertyName};
             }
         }
@@ -65,9 +67,10 @@ readonly abstract class BaseDTO
         return $result;
     }
 
-    protected function isInitialized(string $property): bool
+    protected function hasValue(string $property): bool
     {
         $rp = new ReflectionProperty($this, $property);
+
         return $rp->isInitialized($this);
     }
 }

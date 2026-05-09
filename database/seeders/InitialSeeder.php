@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class InitialSeeder extends Seeder
@@ -46,6 +47,7 @@ class InitialSeeder extends Seeder
 
         if (empty($wardCodes)) {
             $this->command->error('Bảng wards đang trống! Hãy seed bảng wards trước.');
+
             return;
         }
 
@@ -56,7 +58,6 @@ class InitialSeeder extends Seeder
                 'email' => 'superadmin@rental.com',
                 'password' => bcrypt('admin123456'),
                 'name' => 'Super Admin',
-                'role' => 'super_admin',
                 'status' => 'active',
                 'phone' => '+84901234567',
                 'ward_code' => $wardCodes[array_rand($wardCodes)] ?? null,
@@ -69,7 +70,6 @@ class InitialSeeder extends Seeder
                 'email' => 'admin@rental.com',
                 'password' => bcrypt('admin123456'),
                 'name' => 'Admin User',
-                'role' => 'admin',
                 'status' => 'active',
                 'phone' => '+84902345678',
                 'ward_code' => $wardCodes[array_rand($wardCodes)] ?? null,
@@ -82,7 +82,6 @@ class InitialSeeder extends Seeder
                 'email' => 'tenant@rental.com',
                 'password' => bcrypt('admin123456'),
                 'name' => 'Tenant User',
-                'role' => 'user',
                 'status' => 'active',
                 'phone' => '+84903456789',
                 'ward_code' => $wardCodes[array_rand($wardCodes)] ?? null,
@@ -92,28 +91,99 @@ class InitialSeeder extends Seeder
             ],
         ];
 
-
         DB::table('users')->insert($users);
 
-        // Thông báo tạo thành công các user đặc biệt
         foreach ($users as $user) {
-            $role = $user['role'] === 'super_admin' ? 'Super Admin' : ($user['role'] === 'admin' ? 'Admin' : 'Tenant');
-            $this->command->info("✅ {$role} created: {$user['email']} / admin123456");
+            $this->command->info("✅ User created: {$user['email']} / admin123456");
         }
 
         $this->command->info('Đang tạo 10,000 users...');
 
-        // Chia nhỏ thành 10 đợt, mỗi đợt 1000 user để không treo RAM
         foreach (range(1, 10) as $i) {
-            \App\Models\User::factory()->count(100)->create([
+            User::factory()->count(100)->create([
                 'ward_code' => function () use ($wardCodes) {
                     return $wardCodes[array_rand($wardCodes)];
-                }
+                },
             ]);
-            $this->command->comment("Đã xong " . ($i * 100) . " users");
+            $this->command->comment('Đã xong '.($i * 100).' users');
         }
 
         $this->command->info('Hoàn thành!');
+
+        // seed roles
+        $roles = [
+            ['name' => 'super_admin', 'display_name' => 'Super Admin', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'admin', 'display_name' => 'Admin', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'tenant', 'display_name' => 'Tenant', 'created_at' => now(), 'updated_at' => now()],
+        ];
+        DB::table('roles')->insert($roles);
+
+        // seed permissions
+        $resources = ['users', 'dormitories', 'rooms', 'invoices', 'reports'];
+        $actions = ['view', 'create', 'update', 'delete'];
+
+        $permissions = [];
+        foreach ($resources as $res) {
+            foreach ($actions as $act) {
+                $permissions[] = [
+                    'name' => "$res.$act",
+                    'description' => 'Cho phép '.$act.' trong mục '.$res,
+                ];
+            }
+        }
+
+        DB::table('permissions')->insert($permissions);
+
+        // seed role_has_permissions
+        $roles = DB::table('roles')->pluck('id', 'name');
+
+        $perms = DB::table('permissions')->pluck('id', 'name');
+
+        $rolePermissions = [];
+
+        foreach ($perms as $permName => $permId) {
+            $rolePermissions[] = [
+                'role_id' => $roles['super_admin'],
+                'permission_id' => $permId,
+            ];
+        }
+
+        $adminPerms = [
+            'dormitories.view',
+            'dormitories.create',
+            'dormitories.update',
+            'dormitories.delete',
+            'rooms.view',
+            'rooms.create',
+            'rooms.update',
+            'rooms.delete',
+            'reports.view',
+        ];
+        foreach ($adminPerms as $pName) {
+            if (isset($perms[$pName])) {
+                $rolePermissions[] = [
+                    'role_id' => $roles['admin'],
+                    'permission_id' => $perms[$pName],
+                ];
+            }
+        }
+
+        if (isset($perms['reports.view'])) {
+            $rolePermissions[] = [
+                'role_id' => $roles['tenant'],
+                'permission_id' => $perms['reports.view'],
+            ];
+        }
+
+        DB::table('role_has_permissions')->insert($rolePermissions);
+
+        // seed user_has_roles
+        $userRoles = [
+            ['user_id' => $users[0]['id'], 'role_id' => $roles['super_admin']], // Super Admin
+            ['user_id' => $users[1]['id'], 'role_id' => $roles['admin']], // Admin
+            ['user_id' => $users[2]['id'], 'role_id' => $roles['tenant']], // Tenant
+        ];
+        DB::table('user_has_roles')->insert($userRoles);
 
         // Seed plans
         $plans = [
@@ -157,15 +227,14 @@ class InitialSeeder extends Seeder
         DB::table('plans')->insert($plans);
 
         // Seed dormitory
-        $admin_id = $users[1]['id'];
-        $dormitory_id = (string) Str::uuid();
+        $landlord_id = $users[1]['id'];
+        $dormitory_id = 1;
         DB::table('dormitories')->insert([
-            'id' => $dormitory_id,
             'name' => 'Modern Apartment Complex A',
             'address' => '123 Main Street, District 1, Ho Chi Minh City',
             'description' => 'Modern apartment with excellent amenities',
-            'image' => 'https://example.com/dorm1.jpg',
-            'admin_id' => $admin_id,
+            'ward_code' => $wardCodes[array_rand($wardCodes)] ?? null,
+            'landlord_id' => $landlord_id,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -173,9 +242,8 @@ class InitialSeeder extends Seeder
         // Seed rooms
         for ($i = 1; $i <= 5; $i++) {
             DB::table('rooms')->insert([
-                'id' => (string) Str::uuid(),
-                'room_number' => "A{$i}01",
-                'area' => 30 + $i * 5,
+                'name' => "A{$i}01",
+                'size' => 30 + $i * 5,
                 'rental_price' => 5000000 + $i * 500000,
                 'description' => 'Spacious room with balcony',
                 'status' => $i <= 2 ? 'rented' : 'empty',
@@ -183,14 +251,6 @@ class InitialSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-        }
-
-
-
-        // Thông báo tạo thành công các user đặc biệt
-        foreach ($users as $user) {
-            $role = $user['role'] === 'super_admin' ? 'Super Admin' : ($user['role'] === 'admin' ? 'Admin' : 'Tenant');
-            $this->command->info("✅ {$role} created: {$user['email']} / admin123456");
         }
     }
 }

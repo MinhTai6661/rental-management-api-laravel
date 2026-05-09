@@ -11,15 +11,17 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Redis;
 
 class RegisterConfirm extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     public $tries = 3;
+
     public $backoff = 30;
+
     public $timeout = 60;
+
     /**
      * Create a new message instance.
      */
@@ -27,9 +29,8 @@ class RegisterConfirm extends Mailable implements ShouldQueue
         public User $user,
         public string $url,
         public int $expireHours = 24
-    ) {
-    }
-    
+    ) {}
+
     /**
      * Get the message envelope.
      */

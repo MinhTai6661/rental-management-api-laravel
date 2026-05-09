@@ -3,39 +3,46 @@
 namespace App\Http\Services;
 
 use App\DTOs\Auth\authenticateDTO;
-use App\DTOs\User\createUserDTO;
+use App\DTOs\User\CreateUserDTO;
 use App\Enums\ProviderEnum;
-use App\Http\Requests\Auth\LoginRequest;
 use App\Models\PasswordResetTokens;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Auth\Events\Lockout;
-use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthService
 {
-
     public function __construct(
         protected UserService $userService,
-        protected MailService $mailService
+        protected MailService $mailService,
+        protected UserVerificationService $userVerificationService,
+        protected UploadImageService $uploadImageService
     ) {}
+
     /**
      * Attempt to authenticate the request's credentials.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function authenticate(authenticateDTO $request): User
     {
-        $user = User::where("email", $request->email)->first();
+        $user = User::where('email', $request->email)->first();
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages(['Thông tin đăng nhập không chính xác.']);
         }
+
+        return $user;
+    }
+
+    public function register(CreateUserDTO $request): User
+    {
+        $user = $this->userService->createUser($request);
+        $token = $this->userVerificationService->createToken($user->id);
+        $this->mailService->sendRegisterConfirmation($user, $token);
+
         return $user;
     }
 
@@ -55,7 +62,7 @@ class AuthService
     {
         $user = $this->userService->getUserByEmail($email);
 
-        $tokenReset =  PasswordResetTokens::updateOrCreate(
+        $tokenReset = PasswordResetTokens::updateOrCreate(
             ['user_id' => $user->id],
             [
                 'token' => Str::random(60),
@@ -64,6 +71,7 @@ class AuthService
         );
 
         $this->mailService->sendPasswordReset($user, $tokenReset->token);
+
         return $tokenReset;
     }
 
@@ -71,13 +79,13 @@ class AuthService
     {
         $token = PasswordResetTokens::where('token', $token)->first();
         if (! $token || $token->expires_at->isPast()) {
-            throw ValidationException::withMessages(['Token không hợp lệ hoặc đã hết hạn.']);
+            throw ValidationException::withMessages([__('passwords.token')]);
         }
 
         $user = $token->user;
 
         if (! $user) {
-            throw ValidationException::withMessages(['Người dùng không tồn tại.']);
+            throw ValidationException::withMessages([__('passwords.user')]);
         }
 
         $user->password = Hash::make($newPassword);
@@ -90,16 +98,19 @@ class AuthService
     {
         DB::beginTransaction();
 
-        $path = 'avatars/' . $googleUser->getId() . '.jpg';
-        Storage::disk('public')->put($path, file_get_contents($googleUser->getAvatar()));
+        $avatarPath = null;
         try {
-            $userDTO = new createUserDTO([
+            if ($googleUser->getAvatar()) {
+                $avatarPath = $this->uploadImageService->uploadImageFromUrl($googleUser->getAvatar(), 'avatars');
+            }
+            $userDTO = new CreateUserDTO([
                 'name' => $googleUser->getName(),
                 'email' => $googleUser->getEmail(),
-                'avatar' => $path,
+                'avatar' => $avatarPath,
                 'email_verified_at' => now(),
             ]);
 
+            // dd($userDTO);
 
             $user = $this->userService->createUser($userDTO);
             $user->userOauth()->create([
@@ -107,19 +118,27 @@ class AuthService
                 'provider_id' => $googleUser->getId(),
             ]);
             DB::commit();
+
             return $user;
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($avatarPath) {
+                $this->uploadImageService->deleteImage($avatarPath);
+            }
             throw $e;
         }
     }
 
-    public function googleLoginOrRegister(\Laravel\Socialite\Contracts\User $googleUser)
+    /**
+     * Summary of googleLoginOrRegister
+     *
+     * @return array{token: string, user: User}
+     */
+    public function googleLoginOrRegister(\Laravel\Socialite\Contracts\User $googleUser): array
     {
         $user = $this->userService->getUserByEmail($googleUser->getEmail());
-
-        if ($user && !$user->isVerified()) {
-            DB::beginTransaction();
+        if ($user && ! $user->isVerified()) {
+            DB::begin__action();
             try {
                 $user->password = null;
                 $user->email_verified_at = Carbon::now();
@@ -136,19 +155,22 @@ class AuthService
             }
         }
 
-        if (!$user) {
-            $user =  $this->createOauthUser($googleUser);
+        if (! $user) {
+            $user = $this->createOauthUser($googleUser);
         }
         $token = $this->generateTokenForUser($user);
         $data = [
             'user' => $user,
             'token' => $token,
         ];
+
         return $data;
     }
-    public function extractState(string $state, string $key): string | null
+
+    public function extractStateFromOauth(string $state, string $key): ?string
     {
         parse_str($state, $result);
+
         return $result[$key] ?? null;
     }
 }

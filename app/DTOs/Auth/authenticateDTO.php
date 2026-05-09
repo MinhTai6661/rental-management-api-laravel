@@ -2,16 +2,14 @@
 
 namespace App\DTOs\Auth;
 
-use App\Enums\UserRole;
 use Illuminate\Http\Request;
 
-readonly class authenticateDTO
+class authenticateDTO
 {
     public function __construct(
         public string $email,
         public string $password,
     ) {}
-
 
     public static function fromRequest(Request $request): self
     {
@@ -23,11 +21,10 @@ readonly class authenticateDTO
         );
     }
 
-
     public function toArray(): array
     {
         return [
-            'email'    => $this->email,
+            'email' => $this->email,
             'password' => $this->password,
         ];
     }

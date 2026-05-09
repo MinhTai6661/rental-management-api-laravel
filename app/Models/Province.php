@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Database\Factories\ProvinceFactory;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Province extends Model

@@ -127,4 +127,6 @@ return [
 
     'expire_register_token_hours' => env('EXPIRE_REGISTER_TOKEN_HOURS', 24),
 
+    'supported_locales' => ['vi', 'en'],
+
 ];

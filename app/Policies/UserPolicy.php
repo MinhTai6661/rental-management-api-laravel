@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Constants\RoleConstant;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
@@ -9,22 +10,12 @@ use Illuminate\Auth\Access\Response;
 // just learn
 class UserPolicy
 {
-
-    public function before(User $user, string $ability)
-    {
-        if ($user->role === UserRole::SUPER_ADMIN->value) {
-            return true;  
-        }
-    }
     /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): Response
     {
-        // return  $user->role === UserRole::SUPER_ADMIN->value
-        //     ? Response::allow()
-        //     : Response::denyWithStatus(403);
-        return  Response::allow();
+        return Response::allow();
     }
 
     /**
@@ -55,24 +46,29 @@ class UserPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, User $model): bool
+    public function delete(User $user, User $userToDelete): Response
     {
-        return false;
+        $userToDeleteRoles = $userToDelete->roles->pluck('name')->toArray();
+        $isSelf = $user->id === $userToDelete->id;
+        $canDelete = RoleConstant::canDelete($user->roles->pluck('name')->toArray(), $userToDeleteRoles);
+        $condition = !$isSelf && $canDelete;
+        
+        return $condition ? Response::allow() : Response::deny(__('auth.permission_denied'));
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, User $model): bool
+    public function restore(User $user, User $model): Response
     {
-        return false;
+        return Response::deny(__('auth.permission_denied'));
     }
 
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, User $model): bool
+    public function forceDelete(User $user, User $model): Response
     {
-        return false;
+        return Response::deny(__('auth.permission_denied'));
     }
 }
