@@ -67,4 +67,9 @@ trait UserScope
     {
         return $this->scopeByRole($query, UserRole::TENANT);
     }
+
+    public function scopeExcludeCurrentUser($query)
+    {
+        return $query->whereNot('id', request()->user()->id);
+    }
 }

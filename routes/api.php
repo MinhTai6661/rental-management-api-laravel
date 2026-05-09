@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserRoleController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(['prefix' => 'auth'], function () {
@@ -17,6 +19,7 @@ Route::group(['prefix' => 'auth'], function () {
 });
 
 Route::group(['prefix' => 'profile', 'middleware' => ['auth:sanctum']], function () {
+    Route::get('/', [UserController::class, 'getProfile'])->name('profile.get');
     Route::put('/update', [UserController::class, 'updateProfile'])->name('profile.update');
 });
 
@@ -33,7 +36,17 @@ Route::group(['prefix' => 'rooms', 'middleware' => ['auth:sanctum']], function (
     Route::put('/{id}', [RoomController::class, 'updateRoom'])->name('rooms.update')->middleware('can_do:rooms.update');
 });
 
-Route::group(['prefix' => 'users', 'middleware' => ['auth:sanctum']], function () {
-    Route::get('/', [UserController::class, 'users'])->name('users.list')->middleware('can_do:users.view');
-    Route::delete('/{user}', [UserController::class, 'deleteUser'])->name('users.delete')->middleware('can_do:users.delete');
+
+
+Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function () {
+    Route::group(['prefix' => 'users'], function () {
+        Route::get('/', [UserController::class, 'users'])->name('users.list')->middleware('can_do:users.view');
+        Route::delete('/{user}', [UserController::class, 'deleteUser'])->name('users.delete')->middleware('can_do:users.delete');
+        Route::put('/{user}/roles', [RoleController::class, 'updateUserRoles'])->name('users.update.roles')->middleware('can_do:users.update.roles');
+    });
+
+    Route::group(['prefix' => 'roles'], function () {
+        Route::get('/', [RoleController::class, 'list'])->name('roles.list')->middleware('super_admin');
+        Route::put('/{user}', [UserRoleController::class, 'updateUserRoles'])->name('roles.user')->middleware('can_do:users.update.roles');
+    });
 });

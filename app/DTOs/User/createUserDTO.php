@@ -40,10 +40,4 @@ class CreateUserDTO extends BaseDTO
 
     public ?int $ward_code;
 
-    protected static function defaults(): array
-    {
-        return [
-            'status' => UserStatus::INACTIVE->value,
-        ];
-    }
 }

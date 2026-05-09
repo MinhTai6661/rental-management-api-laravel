@@ -29,9 +29,7 @@ class UsersRequest extends FormRequest
             'phone' => 'nullable|string|max:20',
 
             'status' => ['nullable', Rule::enum(UserStatus::class)],
-            'roles' => ['nullable', 'array'],
-            'roles.*' => ['string'],
-
+            'role' => ['nullable', 'integer'],
             'ward_code' => 'nullable|integer',
             'province_code' => 'nullable|integer',
             'detail_address' => 'nullable|string|max:500',

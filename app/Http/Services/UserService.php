@@ -42,16 +42,19 @@ class UserService
 
     public function getAllUsers(GetAllUserDTO $dto, array $columns = ['*'], array $relations = []): LengthAwarePaginator
     {
-
-        $query = User::select($columns)->with(array_merge(['ward.province', 'roles'], $relations));
+        $query = User::select($columns)
+            ->with(array_merge(['ward.province', 'roles'], $relations))
+            ->excludeCurrentUser();
 
         if ($dto->status) {
             $query->where('status', $dto->status);
         }
 
-        // if ($dto->role) {
-        //     $query->where('role', $dto->role);
-        // }
+        if ($dto->role) {
+            $query->whereHas('roles', function ($q) use ($dto) {
+                $q->where('id', $dto->role);
+            });
+        }
 
         if ($dto->wardCode) {
             $query->where('ward_code', $dto->wardCode);
@@ -62,11 +65,11 @@ class UserService
         }
 
         if ($dto->name) {
-            $query->where('name', 'like', '%'.$dto->name.'%');
+            $query->where('name', 'like', '%' . $dto->name . '%');
         }
 
         if ($dto->email) {
-            $query->where('email', 'like', '%'.$dto->email.'%');
+            $query->where('email', 'like', '%' . $dto->email . '%');
         }
         // Sorting
         if ($dto->sortBy && $dto->direction) {

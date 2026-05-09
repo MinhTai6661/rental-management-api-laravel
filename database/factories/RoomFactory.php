@@ -20,7 +20,7 @@ class RoomFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->word(),
+            'name' => $this->faker->unique()->word(),
             'size' => $this->faker->randomFloat(2, 10, 100),
             'rental_price' => $this->faker->randomFloat(2, 100, 1000),
             'description' => $this->faker->sentence(),

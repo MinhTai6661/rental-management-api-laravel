@@ -17,10 +17,12 @@ class RoleResource extends BaseResource
         return [
             'id' => $this->whenNotNull($this->id),
             'name' => $this->whenNotNull($this->name),
-            'permissions' => $this->whenNotNull($this->permissions->pluck('name')),
             'display_name' => $this->whenNotNull($this->display_name),
             'created_at' => $this->whenNotNull($this->created_at?->format('Y-m-d H:i:s')),
             'updated_at' => $this->whenNotNull($this->updated_at?->format('Y-m-d H:i:s')),
+            'permissions' => $this->whenLoaded('permissions', function () {
+                return $this->permissions->pluck('name');
+            }),
         ];
     }
 }

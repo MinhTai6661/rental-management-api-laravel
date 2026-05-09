@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\IsSuperAdmin;
 use App\Traits\ApiResponse;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'can_do' => CheckPermission::class,
+            'super_admin' => IsSuperAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -39,6 +41,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
                 if ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
                     return ApiResponse::error(__('general.not_found'), 404);
+                }
+
+                if($e instanceof \Illuminate\Auth\Access\AuthorizationException) {
+                    return ApiResponse::error(__('auth.unauthorized'), 403);
                 }
 
                 return ApiResponse::error($e->getMessage() ?: 'Error', method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500);

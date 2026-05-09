@@ -20,7 +20,7 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         // Create permissions
-        $resources = ['users', 'dormitories', 'rooms', 'invoices', 'reports'];
+        $resources = ['users', 'dormitories', 'rooms', 'invoices', 'reports', 'roles'];
         $actions = ['view', 'create', 'update', 'delete'];
 
         $permissions = [];
@@ -33,6 +33,10 @@ class PermissionSeeder extends Seeder
             }
         }
 
-        Permission::factory()->createMany($permissions);
+        $morePermissions = [
+            ['name' => 'users.update.roles', 'description' => 'Cho phép cập nhật vai trò của người dùng'],
+        ];
+
+        Permission::factory()->createMany(array_merge($permissions, $morePermissions));
     }
 }

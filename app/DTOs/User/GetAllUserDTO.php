@@ -20,7 +20,7 @@ class GetAllUserDTO extends WithPaginationBaseDTO
     // Filters
     public ?string $status;
 
-    public ?string $role;
+    public ?int $role;
 
     public ?int $wardCode;
 
@@ -33,4 +33,6 @@ class GetAllUserDTO extends WithPaginationBaseDTO
     public ?string $name;
 
     public ?string $email;
+
+
 }

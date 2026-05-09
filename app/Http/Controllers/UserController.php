@@ -8,11 +8,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\User\UpdateProfileRequest;
 use App\Http\Requests\User\UsersRequest;
 use App\Http\Resources\BaseResource;
+use App\Http\Resources\User\UserCollection;
 use App\Http\Resources\User\UserResource;
 use App\Http\Services\UserService;
 use App\Models\User;
 use App\Traits\ApiResponse;
 use Gate;
+use Illuminate\Support\Facades\Auth;
+use Request;
 
 class UserController extends Controller
 {
@@ -24,8 +27,13 @@ class UserController extends Controller
     {
         $dto = GetAllUserDTO::fromRequest($request);
         $users = $userService->getAllUsers($dto);
-
-        return UserResource::collection($users)->additional([
+        return (new UserCollection($users))->additional([
+            'message' => __('general.fetch_success'),
+        ]);
+    }
+    public function getProfile(Request $request, UserService $userService)
+    {
+        return (new UserResource(Auth::user()->load(['roles', 'ward.province'])))->additional([
             'message' => __('general.fetch_success'),
         ]);
     }
@@ -49,4 +57,6 @@ class UserController extends Controller
             'message' => __('general.delete_success'),
         ]);
     }
+    
+
 }

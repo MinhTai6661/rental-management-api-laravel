@@ -53,9 +53,9 @@ class UserSeeder extends Seeder
             $user->roles()->attach($roleIds[$defaultUser['role']]);
         }
 
-        $this->command->info('Đang tạo 10.000 users...');
+        $this->command->info('Đang tạo 1.000 users...');
 
-        for ($i = 0; $i < 100; $i++) {
+        for ($i = 0; $i < 10; $i++) {
             User::factory()->count(100)->create([
                 'ward_code' => fn() => $wardCodes[array_rand($wardCodes)],
             ]);
