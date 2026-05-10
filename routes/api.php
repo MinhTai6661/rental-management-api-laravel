@@ -33,7 +33,7 @@ Route::group(['prefix' => 'dormitories', 'middleware' => ['auth:sanctum']], func
 Route::group(['prefix' => 'rooms', 'middleware' => ['auth:sanctum']], function () {
     Route::get('/', [RoomController::class, 'rooms'])->name('rooms.list')->middleware('can_do:rooms.view');
     Route::post('/', [RoomController::class, 'createRoom'])->name('rooms.create')->middleware('can_do:rooms.create');
-    Route::put('/{id}', [RoomController::class, 'updateRoom'])->name('rooms.update')->middleware('can_do:rooms.update');
+    Route::put('/{room}', [RoomController::class, 'updateRoom'])->name('rooms.update')->middleware('can_do:rooms.update');
 });
 
 

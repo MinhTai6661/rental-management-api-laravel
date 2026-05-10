@@ -12,6 +12,7 @@ class UpdateRoomDTO extends BaseDTO
         'rental_price' => 'rentalPrice',
         'description' => 'description',
         'dormitory_id' => 'dormitoryId',
+        'status' => 'status',
 
         // extra
         'images' => 'images',
@@ -19,18 +20,13 @@ class UpdateRoomDTO extends BaseDTO
     ];
 
     public ?string $name;
-
     public ?float $size;
-
     public ?float $rentalPrice;
-
     public ?string $description;
-
     public ?string $dormitoryId;
+    public ?string $status;
 
     public ?array $images;
-
     public ?array $removeImages;
-
     protected array $except = ['images', 'removeImages'];
 }

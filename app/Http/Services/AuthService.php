@@ -96,21 +96,19 @@ class AuthService
 
     private function createOauthUser(\Laravel\Socialite\Contracts\User $googleUser): User
     {
-        DB::beginTransaction();
 
-        $avatarPath = null;
         try {
+            $avatarPath = null;
             if ($googleUser->getAvatar()) {
                 $avatarPath = $this->uploadImageService->uploadImageFromUrl($googleUser->getAvatar(), 'avatars');
             }
+            DB::beginTransaction();
             $userDTO = new CreateUserDTO([
                 'name' => $googleUser->getName(),
                 'email' => $googleUser->getEmail(),
                 'avatar' => $avatarPath,
                 'email_verified_at' => now(),
             ]);
-
-            // dd($userDTO);
 
             $user = $this->userService->createUser($userDTO);
             $user->userOauth()->create([
@@ -138,7 +136,7 @@ class AuthService
     {
         $user = $this->userService->getUserByEmail($googleUser->getEmail());
         if ($user && ! $user->isVerified()) {
-            DB::begin__action();
+            DB::beginTransaction();
             try {
                 $user->password = null;
                 $user->email_verified_at = Carbon::now();

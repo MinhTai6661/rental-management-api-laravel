@@ -48,7 +48,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function deleteUser(User $user, UserService $userService) // Laravel tự findOrFail ở đây
+    public function deleteUser(User $user, UserService $userService)
     {
         Gate::authorize('delete', $user);
         $userService->deleteUser($user);
@@ -57,6 +57,4 @@ class UserController extends Controller
             'message' => __('general.delete_success'),
         ]);
     }
-    
-
 }

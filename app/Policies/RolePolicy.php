@@ -17,7 +17,7 @@ class RolePolicy
     ];
     public function __construct() {}
 
-    public function before(User $user, string $ability)
+    public function before(User $user)
     {
         if ($user->hasSuperAdmin()) {
             return Response::allow();

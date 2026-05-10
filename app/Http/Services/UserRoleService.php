@@ -28,8 +28,7 @@ class UserRoleService
         $cleanRoles = collect($rolesDto->roles)
         ->filter(fn($value) => !is_null($value) && $value !== '')
         ->toArray();
-
-        dd($cleanRoles);
+        // dd($cleanRoles);
         return $user->roles()->sync($cleanRoles);
     }
 }

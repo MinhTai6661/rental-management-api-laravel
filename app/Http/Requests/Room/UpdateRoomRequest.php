@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Room;
 
+use App\Enums\RoomStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
 
 class UpdateRoomRequest extends FormRequest
 {
@@ -21,15 +23,19 @@ class UpdateRoomRequest extends FormRequest
     {
         return [
             'name' => [
-                'required',
+                'nullable',
                 Rule::unique('rooms')->where(function ($query) {
                     return $query->where('dormitory_id', $this->dormitory_id);
                 }),
             ],
             'size' => 'nullable|numeric|min:0',
-            'rental_price' => 'required|numeric|min:0',
+            'rental_price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
-            'dormitory_id' => 'required|numeric|exists:dormitories,id',
+            'dormitory_id' => 'nullable|numeric|exists:dormitories,id',
+            'status' => [
+                'nullable',
+                new Enum(RoomStatus::class)
+            ],
             'images' => 'nullable|max:2048',
             'images.*' => 'image|mimes:jpeg,png,jpg|max:2048',
         ];

@@ -13,6 +13,7 @@ trait ApiBaseResource
                 'current_page' => $paginated['current_page'],
                 'last_page' => $paginated['last_page'],
                 'has_more' => $paginated['current_page'] < $paginated['last_page'],
+                'has_previous' => $paginated['current_page'] > 1,
             ],
         ];
     }

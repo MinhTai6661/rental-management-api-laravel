@@ -36,13 +36,12 @@ class RoomController extends Controller
         return (new RoomResource($room))->additional(['message' => __('room.create_success')]);
     }
 
-    // public function updateRoom(int $id, UpdateRoomRequest $request, RoomService $roomService)
-    // {
-    //     Gate::authorize('updateRoom', [Room::class, $request]);
+    public function updateRoom(Room $room, UpdateRoomRequest $updateRoomRequest, RoomService $roomService)
+    {
+        Gate::authorize('updateRoom', [Room::class, $room]);
+        $dto = UpdateRoomDTO::fromRequestPartial($updateRoomRequest);
+        $room = $roomService->updateRoom($room, $dto);
 
-    //     $dto = UpdateRoomDTO::fromRequestPartial($request);
-    //     $room = $roomService->updateRoomById($id, $dto);
-
-    //     return (new RoomResource($room))->additional(['message' => __('room.update_success')]);
-    // }
+        return (new RoomResource($room))->additional(['message' => __('room.update_success')]);
+    }
 }

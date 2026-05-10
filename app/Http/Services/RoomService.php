@@ -132,8 +132,16 @@ class RoomService
         }
     }
 
-    public function updateRoomById(int $roomId, UpdateRoomDTO $dto)
+    public function updateRoom(Room $room, UpdateRoomDTO $dto): Room
     {
-    
+        try {
+            $dataUpdate = $dto->toArray();
+            // dd($dataUpdate);
+            $room->update($dataUpdate);
+            return $room;
+        } catch (\Exception $e) {
+            throw new \Exception(__('room.update_failed'));
+        }
     }
+    
 }
