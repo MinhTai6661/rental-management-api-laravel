@@ -31,13 +31,43 @@ class UpdateRoomRequest extends FormRequest
             'size' => 'nullable|numeric|min:0',
             'rental_price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
-            'dormitory_id' => 'nullable|numeric|exists:dormitories,id',
+            'dormitory_id' => 'nullable|numeric',
             'status' => [
                 'nullable',
                 new Enum(RoomStatus::class)
             ],
-            'images' => 'nullable|max:2048',
-            'images.*' => 'image|mimes:jpeg,png,jpg|max:2048',
+
+            // extra
+            'deleted_image_ids' => ['nullable', 'array'],
+            'deleted_image_ids.*' => [
+                'integer',
+            ],
+
+            'images' => ['nullable', 'array', 'max:5'],
+
+            'images.*.id' => [
+                'nullable',
+                'integer',
+                function ($attribute, $value, $fail) {
+                    if (in_array($value, $this->input('deleted_image_ids', []))) {
+                        $fail("ID {$value} đang nằm trong danh sách xóa, không thể sắp xếp.");
+                    }
+                },
+            ],
+
+            'images.*.file' => [
+                'required_if:images.*.id,null',
+                'nullable',
+                'image',
+                'mimes:jpeg,png,jpg',
+                'max:2048'
+            ],
+
+            'images.*.file_name' => [
+                'required_if:images.*.id,null',
+                'nullable',
+                'string'
+            ],
         ];
     }
 

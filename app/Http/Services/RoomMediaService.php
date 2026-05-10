@@ -17,31 +17,14 @@ class RoomMediaService
     public function updateRoomMedia(Room $room, UpdateRoomDTO $dto)
     {
         try {
+            
+
             DB::beginTransaction();
-
-            if ($dto->images) {
-                foreach ($dto->images as $image) {
-                    $path = $this->uploadImageService->uploadImage($image, 'room_media');
-                    $room->media()->create(['url' => $path]);
-                }
-            }
-
-            if ($dto->removeImages) {
-                foreach ($dto->removeImages as $mediaId) {
-                    $media = $room->media()->find($mediaId);
-                    if ($media) {
-                        $this->uploadImageService->deleteImage($media->url);
-                        $media->delete();
-                    }
-                }
-            }
 
             DB::commit();
         } catch (\Throwable $th) {
-            //throw $th;
             DB::rollBack();
             throw $th;
         }
     }
-
 }

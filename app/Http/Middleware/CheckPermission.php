@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Permission;
 use Closure;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
@@ -16,9 +17,13 @@ class CheckPermission
             throw new AuthenticationException(__('unauthenticated'));
         }
 
-        $userPermissions = $user->roles->flatMap(function ($role) {
-            return $role->permissions;
-        })->pluck('name')->toArray();
+        $userPermissions = Permission::query()
+            ->join('role_has_permissions', 'permissions.id', '=', 'role_has_permissions.permission_id')
+            ->join('user_has_roles', 'role_has_permissions.role_id', '=', 'user_has_roles.role_id')
+            ->where('user_has_roles.user_id', $user->id)
+            ->distinct()
+            ->pluck('permissions.name')
+            ->toArray();
 
         $resource = explode('.', $permission)[0];
 

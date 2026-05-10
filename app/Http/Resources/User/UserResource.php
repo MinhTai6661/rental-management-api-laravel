@@ -15,11 +15,11 @@ class UserResource extends BaseResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->whenNotNull($this->id),
+            'id' => $this->id,
 
-            'name' => $this->whenNotNull($this->name),
-            'email' => $this->whenNotNull($this->email),
-            'phone' => $this->whenNotNull($this->phone),
+            'name' => $this->name,
+            'email' => $this->email,
+            'phone' => $this->phone,
             'roles' => $this->whenLoaded('roles', function () {
                 return $this->roles->map(function ($role) {
                     return [
@@ -28,8 +28,8 @@ class UserResource extends BaseResource
                     ];
                 });
             }),
-            'avatar' => $this->whenNotNull($this->avatar),
-            'detail_address' => $this->whenNotNull($this->detail_address),
+            'avatar' => $this->avatar,
+            'detail_address' => $this->detail_address,
 
             'ward_name' => $this->whenLoaded('ward', function () {
                 return $this->ward_name;
@@ -41,8 +41,8 @@ class UserResource extends BaseResource
                 });
             }),
 
-            'created_at' => $this->whenNotNull($this->created_at?->format('Y-m-d H:i:s')),
-            'updated_at' => $this->whenNotNull($this->updated_at?->format('Y-m-d H:i:s')),
+            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
+            'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
         ];
     }
 }

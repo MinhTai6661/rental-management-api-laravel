@@ -16,17 +16,17 @@ class UpdateRoomDTO extends BaseDTO
 
         // extra
         'images' => 'images',
-        'remove_images' => 'removeImages',
+        'deleted_image_ids' => 'deletedImageIds',
     ];
 
     public ?string $name;
     public ?float $size;
     public ?float $rentalPrice;
     public ?string $description;
-    public ?string $dormitoryId;
+    public ?int $dormitoryId;
     public ?string $status;
 
     public ?array $images;
-    public ?array $removeImages;
-    protected array $except = ['images', 'removeImages'];
+    public ?array $deletedImageIds;
+    protected array $except = ['images', 'deletedImageIds'];
 }

@@ -38,7 +38,7 @@ class RoomController extends Controller
 
     public function updateRoom(Room $room, UpdateRoomRequest $updateRoomRequest, RoomService $roomService)
     {
-        Gate::authorize('updateRoom', [Room::class, $room]);
+        Gate::authorize('updateRoom', [Room::class, $room, $updateRoomRequest->validated()]);
         $dto = UpdateRoomDTO::fromRequestPartial($updateRoomRequest);
         $room = $roomService->updateRoom($room, $dto);
 

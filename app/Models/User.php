@@ -3,8 +3,11 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Traits\MediaUrl;
 use App\Traits\User\HasVerification;
 use App\Traits\User\UserScope;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -14,6 +17,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'password'])]
@@ -22,7 +27,7 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasUuids, HasVerification, Notifiable, SoftDeletes, UserScope;
+    use HasApiTokens, HasFactory, HasUuids, HasVerification, Notifiable, SoftDeletes, UserScope, MediaUrl;
 
     protected $fillable = [
         'email',
@@ -54,6 +59,13 @@ class User extends Authenticatable
         ];
     }
 
+    protected function avatar(): Attribute
+    {
+        return Attribute::make(
+            get: fn(?string $value) => $this->getMediaUrl($value),
+        );
+    }
+
     public function ward()
     {
         return $this->belongsTo(Ward::class, 'ward_code', 'code');
@@ -78,5 +90,4 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Role::class, 'user_has_roles', 'user_id', 'role_id');
     }
-
 }

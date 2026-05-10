@@ -19,7 +19,6 @@ class UserRoleController extends Controller
     public function updateUserRoles(UsersUpdateRoleRequest $request, User $user, UserRoleService $userRoleService)
     {
         $roleIds = $request->validated()['roles'] ?? [];
-        // dd($roleIds);
         Gate::authorize('updateUserRole', [Role::class, $user, $roleIds]);
         $dto = UpdateRoleDTO::fromRequest($request);
         $userRoleService->updateUserRoles($user, $dto);

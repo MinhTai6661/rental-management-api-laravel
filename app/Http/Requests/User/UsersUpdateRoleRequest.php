@@ -26,7 +26,6 @@ class UsersUpdateRoleRequest extends FormRequest
             'roles.*' => [
                 'nullable',
                 'numeric',
-                'exists:roles,id'
             ],
         ];
     }

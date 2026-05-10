@@ -114,7 +114,7 @@ class RoomService
         DB::beginTransaction();
         try {
             $room = Room::create($dto->toArray());
-            
+
             if (! empty($uploadedImages)) {
                 $room->media()->createMany($uploadedImages);
             }
@@ -132,16 +132,24 @@ class RoomService
         }
     }
 
+    private function updateRoomImages(Room $room, array $dataUpdate)
+    {
+        dd('ahihi', $dataUpdate);
+    }
+
     public function updateRoom(Room $room, UpdateRoomDTO $dto): Room
     {
         try {
+            dd($dto);
+            if (!empty($dto->images) && !empty($dto->deletedImageIds)) {
+                $this->updateRoomImages($room, $dto->images);
+            }
+            dd($dto->toArray());
             $dataUpdate = $dto->toArray();
-            // dd($dataUpdate);
             $room->update($dataUpdate);
             return $room;
         } catch (\Exception $e) {
             throw new \Exception(__('room.update_failed'));
         }
     }
-    
 }

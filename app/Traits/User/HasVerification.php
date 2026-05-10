@@ -14,27 +14,34 @@ trait HasVerification
 {
     public function isVerified(): bool
     {
-        return $this->attributes['email_verified_at'] !== null;
+        return $this->roles()->where('name', UserRole::SUPER_ADMIN->value)->exists();
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return $this->roles()->select('name')
+            ->where('name', $role)
+            ->exists();
     }
 
     public function hasSuperAdmin(): bool
     {
-        return $this->roles->contains('name', UserRole::SUPER_ADMIN->value);
+        return $this->hasRole(UserRole::SUPER_ADMIN->value);
     }
 
     public function hasAdmin(): bool
     {
-        return $this->roles->contains('name', UserRole::ADMIN->value);
+        return $this->hasRole(UserRole::ADMIN->value);
     }
 
     public function hasLandlord(): bool
     {
-        return $this->roles->contains('name', UserRole::LANDLORD->value);
+        return $this->hasRole(UserRole::LANDLORD->value);
     }
 
     public function hasTenant(): bool
     {
-        return $this->roles->contains('name', UserRole::TENANT->value);
+        return $this->hasRole(UserRole::TENANT->value);
     }
 
     public function isOwner(string $userId): bool

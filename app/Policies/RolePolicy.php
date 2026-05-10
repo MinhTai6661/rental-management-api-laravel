@@ -32,9 +32,15 @@ class RolePolicy
     public function updateUserRole(User $user, User $targetUser, array $roleIds): Response
     {
         $isSelf = $user->id === $targetUser->id;
-        $targetRolesUpdate = Role::whereIn('id', $roleIds)->pluck('name')->toArray();
-        $targetUserRoles = $targetUser->roles->pluck('name')->toArray();
-        $currentUserRoles = $user->roles->pluck('name')->toArray();
+        $targetRolesUpdate = Role::whereIn('id', $roleIds)
+            ->select('name')
+            ->pluck('name')
+            ->toArray();
+
+        $isRolesValid = count($targetRolesUpdate) === count($roleIds);
+
+        $targetUserRoles = $targetUser->roles()->pluck('name')->toArray();
+        $currentUserRoles = $user->roles()->pluck('name')->toArray();
         $hasUpdatePermissionUser = CheckRole::checkPermission(
             $currentUserRoles,
             $targetUserRoles,
@@ -46,8 +52,8 @@ class RolePolicy
             $targetRolesUpdate,
             self::CAN_UPDATE
         );
-        // dd($currentUserRoles, $targetRolesUpdate,   $canUpdateRoles, $hasUpdatePermissionUser);
-        if (!$hasUpdatePermissionUser || !$canUpdateRoles || $isSelf) {
+        // dd($currentUserRoles, $targetRolesUpdate,   $canUpdateRoles, $hasUpdatePermissionUser);\
+        if (!$hasUpdatePermissionUser || !$canUpdateRoles || $isSelf || !$isRolesValid) {
             return Response::denyWithStatus(403);
         }
         return Response::allow();
