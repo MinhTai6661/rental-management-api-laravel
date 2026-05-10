@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Attributes\UseModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -10,6 +11,7 @@ use Illuminate\Support\Str;
 /**
  * @extends Factory<User>
  */
+#[UseModel(User::class)]
 class UserFactory extends Factory
 {
     /**
@@ -24,18 +26,14 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
-
-        $wardId = \DB::table('wards')->inRandomOrder()->value('code');
         return [
             'id' => (string) Str::uuid(),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'password' => static::$password ??= Hash::make('password'), // Hash một lần dùng mãi mãi
-            'role' => 'user',
+            'password' => static::$password ??= Hash::make('password'),
             'status' => 'active',
             'phone' => fake()->phoneNumber(),
-            'wardId' => $wardId,
-            'detailAddress' => fake()->streetAddress(),
+            'detail_address' => fake()->streetAddress(),
         ];
     }
 
@@ -44,7 +42,7 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
     }

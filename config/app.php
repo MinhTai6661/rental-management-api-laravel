@@ -123,4 +123,10 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'CLIENT_URL' => env('CLIENT_URL', 'http://localhost:3000'),
+
+    'expire_register_token_hours' => env('EXPIRE_REGISTER_TOKEN_HOURS', 24),
+
+    'supported_locales' => ['vi', 'en'],
+
 ];

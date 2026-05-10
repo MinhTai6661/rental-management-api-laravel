@@ -11,30 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Schema::create('users', function (Blueprint $table) {
-        //     $table->id();
-        //     $table->string('name');
-        //     $table->string('email')->unique();
-        //     $table->timestamp('email_verified_at')->nullable();
-        //     $table->string('password');
-        //     $table->rememberToken();
-        //     $table->timestamps();
-        // });
-
-        // Schema::create('password_reset_tokens', function (Blueprint $table) {
-        //     $table->string('email')->primary();
-        //     $table->string('token');
-        //     $table->timestamp('created_at')->nullable();
-        // });
-
-        // Schema::create('sessions', function (Blueprint $table) {
-        //     $table->string('id')->primary();
-        //     $table->foreignId('user_id')->nullable()->index();
-        //     $table->string('ip_address', 45)->nullable();
-        //     $table->text('user_agent')->nullable();
-        //     $table->longText('payload');
-        //     $table->integer('last_activity')->index();
-        // });
 
         // provinces table
         Schema::create('provinces', function (Blueprint $table) {
@@ -58,7 +34,6 @@ return new class extends Migration
             $table->foreign('province_code')->references('code')->on('provinces')->onDelete('cascade');
         });
 
-
         // users table
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary();
@@ -67,16 +42,50 @@ return new class extends Migration
             $table->string('password', 255)->nullable();
             $table->string('name', 255);
             $table->string('phone', 20)->nullable();
-            $table->enum('role', ['super_admin', 'admin', 'user'])->default('user');
             $table->enum('status', ['active', 'inactive', 'pending_approval'])->default('active');
             $table->string('avatar', 255)->nullable();
-            $table->integer('wardId')->nullable();
-            $table->text('detailAddress')->nullable();
+            $table->integer('ward_code')->nullable();
+            $table->text('detail_address')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('wardId')->references('code')->on('wards')->onDelete('set null');
+            $table->foreign('ward_code')->references('code')->on('wards')->onDelete('set null');
+        });
+
+        Schema::create('roles', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('display_name')->nullable();
+            $table->integer('level')->default(0);
+            $table->timestamps();
+        });
+
+        Schema::create('permissions', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('description')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('role_has_permissions', function (Blueprint $table) {
+            $table->unsignedBigInteger('role_id');
+            $table->unsignedBigInteger('permission_id');
+
+            $table->primary(['role_id', 'permission_id']);
+
+            $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
+
+            $table->foreign('permission_id')->references('id')->on('permissions')->onDelete('restrict');
+        });
+
+        Schema::create('user_has_roles', function (Blueprint $table) {
+            $table->uuid('user_id');
+            $table->unsignedBigInteger('role_id');
+
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('role_id')->references('id')->on('roles')->onDelete('restrict');
+            $table->primary(['user_id', 'role_id']);
         });
 
         Schema::create('plans', function (Blueprint $table) {
@@ -85,7 +94,7 @@ return new class extends Migration
             $table->string('name', 255);
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2);
-            $table->integer('maxRooms');
+            $table->integer('max_rooms');
             $table->integer('flags')->default(0);
             $table->json('channels')->nullable();
             $table->timestamps();
@@ -93,105 +102,119 @@ return new class extends Migration
         });
 
         Schema::create('dormitories', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->id();
             $table->string('name', 255);
             $table->text('address');
             $table->text('description')->nullable();
-            $table->string('image', 255)->nullable();
-            $table->uuid('adminId');
+            $table->uuid('landlord_id');
+            $table->integer('ward_code')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('adminId')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('landlord_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('ward_code')->references('code')->on('wards')->onDelete('set null');
         });
 
         Schema::create('rooms', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('roomNumber', 50);
-            $table->decimal('area', 10, 2);
-            $table->decimal('rentalPrice', 15, 2);
+            $table->id();
+            $table->string('name', 50);
+            $table->decimal('size', 10, 2)->nullable();
+            $table->decimal('rental_price', 15, 2);
             $table->text('description')->nullable();
-            $table->string('image', 255)->nullable();
-            $table->enum('status', ['empty', 'rented', 'repairing'])->default('empty');
-            $table->uuid('dormitoryId');
+            $table->enum('status', ['available', 'rented', 'repairing'])->default('available');
+            $table->unsignedBigInteger('dormitory_id')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('dormitoryId')->references('id')->on('dormitories')->onDelete('cascade');
+            $table->unique(['name', 'dormitory_id']);
+            $table->foreign('dormitory_id')->references('id')->on('dormitories')->onDelete('set null');
+        });
+
+        Schema::create('room_media', function (Blueprint $table) {
+            $table->id();
+            $table->string('file_path');
+            $table->string('file_name');
+            $table->string('file_type');
+            $table->unsignedBigInteger('file_size');
+            $table->integer('order')->default(0);
+            $table->string('type')->nullable()->index();
+            $table->unsignedBigInteger('room_id');
+
+            $table->timestamps();
+            $table->foreign('room_id')->references('id')->on('rooms')->onDelete('cascade');
         });
 
         Schema::create('contracts', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('roomId');
-            $table->uuid('tenantId');
-            $table->dateTime('startDate');
-            $table->dateTime('endDate')->nullable();
+            $table->unsignedBigInteger('room_id');
+            $table->uuid('tenant_id');
+            $table->dateTime('start_date');
+            $table->dateTime('end_date')->nullable();
             $table->enum('status', ['active', 'expired', 'terminated'])->default('active');
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('roomId')->references('id')->on('rooms')->onDelete('cascade');
-            $table->foreign('tenantId')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('room_id')->references('id')->on('rooms')->onDelete('cascade');
+            $table->foreign('tenant_id')->references('id')->on('users')->onDelete('cascade');
         });
 
         Schema::create('invoices', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('contractId');
+            $table->uuid('contract_id');
             $table->decimal('amount', 15, 2);
-            $table->dateTime('dueDate');
+            $table->dateTime('due_date');
             $table->enum('status', ['draft', 'pending', 'paid', 'overdue'])->default('draft');
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('contractId')->references('id')->on('contracts')->onDelete('cascade');
+            $table->foreign('contract_id')->references('id')->on('contracts')->onDelete('cascade');
         });
 
         Schema::create('payments', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('invoiceId');
+            $table->uuid('invoice_id');
             $table->decimal('amount', 15, 2);
-            $table->dateTime('paymentDate');
+            $table->dateTime('payment_date');
             $table->string('method', 50);
             $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');
             $table->timestamps();
 
-            $table->foreign('invoiceId')->references('id')->on('invoices')->onDelete('cascade');
+            $table->foreign('invoice_id')->references('id')->on('invoices')->onDelete('cascade');
         });
 
         Schema::create('subscriptions', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('planId');
-            $table->uuid('adminId');
-            $table->dateTime('startDate');
-            $table->dateTime('endDate')->nullable();
+            $table->uuid('plan_id');
+            $table->uuid('landlord_id');
+            $table->dateTime('start_date');
+            $table->dateTime('end_date')->nullable();
             $table->enum('status', ['active', 'expired', 'cancelled'])->default('active');
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('planId')->references('id')->on('plans')->onDelete('cascade');
-            $table->foreign('adminId')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('plan_id')->references('id')->on('plans')->onDelete('cascade');
+            $table->foreign('landlord_id')->references('id')->on('users')->onDelete('cascade');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->increments('id');
-            $table->uuid('userId');
+            $table->uuid('user_id');
             $table->string('token', 500);
-            $table->dateTime('expiresAt');
+            $table->dateTime('expires_at');
             $table->timestamps();
 
-            $table->foreign('userId')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
 
         Schema::create('user_oauth', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('userId');
+            $table->id();
+            $table->uuid('user_id');
             $table->enum('provider', ['google', 'zalo', 'facebook']);
-            $table->string('providerUserId', 255);
+            $table->string('provider_id', 255);
             $table->timestamps();
 
-            $table->foreign('userId')->references('id')->on('users')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade')->onUpdate('cascade');
         });
-
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
@@ -217,6 +240,14 @@ return new class extends Migration
         Schema::dropIfExists('rooms');
         Schema::dropIfExists('dormitories');
         Schema::dropIfExists('plans');
+        Schema::dropIfExists('user_has_roles');
+        Schema::dropIfExists('role_has_permissions');
         Schema::dropIfExists('users');
+        Schema::dropIfExists('permissions');
+        Schema::dropIfExists('roles');
+        Schema::dropIfExists('wards');
+        Schema::dropIfExists('provinces');
+        Schema::dropIfExists('room_media');
+
     }
 };

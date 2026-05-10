@@ -20,7 +20,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!App::isLocal()) {
+        if (! App::isLocal()) {
             return;
         }
         $schema = Schema::connection($this->getConnection());

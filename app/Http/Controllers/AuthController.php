@@ -2,76 +2,118 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\DTOs\Auth\authenticateDTO;
+use App\DTOs\User\CreateUserDTO;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Http\Resources\BaseResource;
+use App\Http\Resources\User\UserResource;
+use App\Http\Services\AuthService;
+use App\Http\Services\MailService;
+use App\Http\Services\UserVerificationService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
-    public function index(Request $request)
+    use ApiResponse;
+
+    public function __construct() {}
+
+    public function register(RegisterRequest $request, AuthService $authService, UserVerificationService $userVerificationService, MailService $mailService)
     {
-        return response()->json([
-            'message' => 'Chào mừng Admin, đây là danh sách phòng bí mật của MyRent',
-            'user' => $request->user()
+        $dto = CreateUserDTO::fromRequestPartial($request);
+        $user = $authService->register($dto);
+
+        return $user->toResource(UserResource::class)->additional([
+            'message' => 'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản.',
         ]);
     }
 
-    private function generateTokenForUser(User $user)
-    {
-        $token = $user->createToken('auth_token');
-
-        return $token->plainTextToken;
-    }
-
-    private function validateUser(Request $request)
+    public function confirmRegister(Request $request, UserVerificationService $userVerificationService)
     {
         $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
+            'token' => 'required|string',
         ]);
+        $token = $request->input('token');
+        $userVerificationService->confirmEmail($token);
 
-        $user = User::where('email', $request->email)->first();
+        return (new BaseResource(null))->additional([
+            'message' => 'Tài khoản đã được xác nhận thành công. Bạn có thể đăng nhập ngay bây giờ.',
+        ]);
+    }
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                    'email' => ['Thông tin đăng nhập không chính xác.'],
-                ]);
+    public function login(LoginRequest $request, AuthService $authService)
+    {
+        $dto = authenticateDTO::fromRequest($request);
+        $user = $authService->authenticate($dto);
+        $token = $authService->generateTokenForUser($user);
+
+        return (new UserResource($user))->additional([
+            'token' => $token,
+            'message' => 'Đăng nhập thành công',
+        ]);
+    }
+
+    public function forgotPassword(ForgotPasswordRequest $request, AuthService $authService)
+    {
+
+        $authService->forgotPassword($request->email);
+
+        return (new BaseResource(null))->additional([
+            'message' => 'Nếu email tồn tại trong hệ thống, bạn sẽ nhận được một email hướng dẫn đặt lại mật khẩu.',
+        ]);
+    }
+
+    public function resetPassword(ResetPasswordRequest $request, AuthService $authService)
+    {
+        $authService->resetPassword($request->token, $request->password);
+
+        return (new BaseResource(null))->additional([
+            'message' => 'Mật khẩu đã được đặt lại thành công.',
+        ]);
+    }
+
+    public function logout(Request $request, AuthService $authService)
+    {
+        $user = $request->user();
+        $authService->logout($user);
+
+        return (new BaseResource(null))->additional([
+            'message' => 'Đăng xuất thành công.',
+        ]);
+    }
+
+    public function redirectToGoogle(Request $request)
+    {
+        $params = [
+            'redirect' => $request->query('redirect', 'dashboard'),
+        ];
+
+        $state = http_build_query($params);
+
+        $driver = Socialite::driver('google');
+
+        return $driver
+            ->stateless()
+            ->with(['state' => $state])
+            ->redirect();
+    }
+
+    public function handleGoogleCallback(Request $request, AuthService $authService)
+    {
+        try {
+            $target = $authService->extractStateFromOauth($request->input('state'), 'redirect') ?? 'dashboard123123';
+            $driver = Socialite::driver('google');
+            $googleUser = $driver->stateless()->user();
+            ['user' => $user, 'token' => $token] = $authService->googleLoginOrRegister($googleUser);
+
+            return redirect()->to(config('app.CLIENT_URL')."/{$target}?token={$token}");
+        } catch (\Exception $e) {
+            return redirect()->to(config('app.CLIENT_URL').'/login?error=social_failed');
         }
-        return $user;
-    }
-
-    public function register(Request $request)
-    {
-        // Validate input
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        // Create user
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-        ]);
-
-        // Create token
-        $token = $user->createToken('auth_token');
-
-        return response()->json([
-            'message' => 'User registered successfully',
-            'access_token' => $token->plainTextToken,
-            'token_type' => 'Bearer',
-        ], 201);
-    }
-
-    public function login(Request $request)
-    {
-        $user = $this->validateUser($request);
-        $token = $this->generateTokenForUser($user);
-
-        return ['token' => $token, 'user' => $user];
     }
 }
