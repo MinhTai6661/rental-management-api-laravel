@@ -83,13 +83,13 @@ class UploadImageService
     protected function uploadSingleImageFromUrl(string $url, $storagePath = 'stores', string $disk = self::DEFAULT_DISK)
     {
         try {
-            $fileName = Str::uuid().'.jpg';
-            $path = $this->createPath($storagePath).'/'.$fileName;
+            $fileName = Str::uuid() . '.jpg';
+            $path = $this->createPath($storagePath) . '/' . $fileName;
             Storage::disk($disk)->put($path, file_get_contents($url));
 
             return $path;
         } catch (\Exception $e) {
-            Log::error('Failed to upload image from URL: '.$e->getMessage());
+            Log::error('Failed to upload image from URL: ' . $e->getMessage());
 
             return null;
         }
@@ -107,7 +107,7 @@ class UploadImageService
         try {
             $storage = Storage::disk($disk);
             $currentDate = now()->format('Y-m');
-            $newKey = $path.'/'.$currentDate.'/'.uniqid().'_'.basename($originalKey);
+            $newKey = $path . '/' . $currentDate . '/' . uniqid() . '_' . basename($originalKey);
             if ($storage->exists($originalKey)) {
                 $contents = $storage->get($originalKey);
                 $storage->put($newKey, $contents);
@@ -129,6 +129,13 @@ class UploadImageService
     {
         foreach ($images as $image) {
             $this->deleteImage($image['file_path'], $disk);
+        }
+    }
+
+    public function deleteImagesByPath(array $paths, string $disk = self::DEFAULT_DISK)
+    {
+        foreach ($paths as $path) {
+            $this->deleteImage($path, $disk);
         }
     }
 
@@ -187,7 +194,7 @@ class UploadImageService
      */
     protected function generateUniqueFileName(UploadedFile $file)
     {
-        return Str::uuid().'.'.$file->getClientOriginalExtension();
+        return Str::uuid() . '.' . $file->getClientOriginalExtension();
     }
 
     /**
@@ -230,7 +237,7 @@ class UploadImageService
 
             return $uploaded ? $filePath : null;
         } catch (\Exception $e) {
-            Log::error('Disk upload failed: '.$e->getMessage());
+            Log::error('Disk upload failed: ' . $e->getMessage());
 
             return null;
         }
@@ -274,7 +281,7 @@ class UploadImageService
 
             return $filePath;
         } catch (\Exception $e) {
-            Log::error('File upload failed: '.$e->getMessage());
+            Log::error('File upload failed: ' . $e->getMessage());
 
             return null;
         }
@@ -294,7 +301,7 @@ class UploadImageService
 
         $gcd = $this->gcd($width, $height);
 
-        $aspectRatio = ($width / $gcd).':'.($height / $gcd);
+        $aspectRatio = ($width / $gcd) . ':' . ($height / $gcd);
 
         return $aspectRatio;
     }

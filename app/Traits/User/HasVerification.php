@@ -17,31 +17,31 @@ trait HasVerification
         return $this->roles()->where('name', UserRole::SUPER_ADMIN->value)->exists();
     }
 
-    public function hasRole(string $role): bool
+    public function hasRole(array $role): bool
     {
         return $this->roles()->select('name')
-            ->where('name', $role)
+            ->whereIn('name', $role)
             ->exists();
     }
 
     public function hasSuperAdmin(): bool
     {
-        return $this->hasRole(UserRole::SUPER_ADMIN->value);
+        return $this->hasRole([UserRole::SUPER_ADMIN->value]);
     }
 
     public function hasAdmin(): bool
     {
-        return $this->hasRole(UserRole::ADMIN->value);
+        return $this->hasRole([UserRole::ADMIN->value]);
     }
 
     public function hasLandlord(): bool
     {
-        return $this->hasRole(UserRole::LANDLORD->value);
+        return $this->hasRole([UserRole::LANDLORD->value]);
     }
 
     public function hasTenant(): bool
     {
-        return $this->hasRole(UserRole::TENANT->value);
+        return $this->hasRole([UserRole::TENANT->value]);
     }
 
     public function isOwner(string $userId): bool

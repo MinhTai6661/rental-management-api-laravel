@@ -44,4 +44,5 @@ class RoomController extends Controller
 
         return (new RoomResource($room))->additional(['message' => __('room.update_success')]);
     }
+
 }

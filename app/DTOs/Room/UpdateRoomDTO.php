@@ -16,7 +16,6 @@ class UpdateRoomDTO extends BaseDTO
 
         // extra
         'images' => 'images',
-        'deleted_image_ids' => 'deletedImageIds',
     ];
 
     public ?string $name;
@@ -27,6 +26,5 @@ class UpdateRoomDTO extends BaseDTO
     public ?string $status;
 
     public ?array $images;
-    public ?array $deletedImageIds;
-    protected array $except = ['images', 'deletedImageIds'];
+    protected array $except = ['images'];
 }

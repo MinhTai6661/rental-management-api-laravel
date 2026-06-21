@@ -73,7 +73,7 @@ class RoomPolicy
     {
         $isOwnerResource = $this->isOwnerResource($user->id, $room, $dataUpdate);
         $condition = $isOwnerResource;
-d
+
         if (!$condition) {
             return Response::denyWithStatus(403);
         }

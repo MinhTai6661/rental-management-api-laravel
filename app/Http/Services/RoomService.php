@@ -6,6 +6,7 @@ use App\DTOs\Room\CreateRoomDTO;
 use App\DTOs\Room\GetRoomsDTO;
 use App\DTOs\Room\UpdateRoomDTO;
 use App\Models\Room;
+use App\Models\RoomMedia;
 use Illuminate\Support\Facades\DB;
 
 class RoomService
@@ -14,7 +15,8 @@ class RoomService
         protected UserService $userService,
         protected MailService $mailService,
         protected UserVerificationService $userVerificationService,
-        protected UploadImageService $uploadImageService
+        protected UploadImageService $uploadImageService,
+        protected RoomMediaService $roomMediaService
     ) {}
 
     public function getRooms(GetRoomsDTO $dto, array $columns = ['*'], array $relations = [])
@@ -132,24 +134,17 @@ class RoomService
         }
     }
 
-    private function updateRoomImages(Room $room, array $dataUpdate)
-    {
-        dd('ahihi', $dataUpdate);
-    }
-
     public function updateRoom(Room $room, UpdateRoomDTO $dto): Room
     {
         try {
-            dd($dto);
-            if (!empty($dto->images) && !empty($dto->deletedImageIds)) {
-                $this->updateRoomImages($room, $dto->images);
+            if (!empty($dto->images)) {
+                $this->roomMediaService->updateRoomMedia($room, $dto->images);
             }
-            dd($dto->toArray());
             $dataUpdate = $dto->toArray();
             $room->update($dataUpdate);
             return $room;
         } catch (\Exception $e) {
-            throw new \Exception(__('room.update_failed'));
+            throw new \Exception(__($e->getMessage() ?: 'update_error'));
         }
     }
 }

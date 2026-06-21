@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Room;
 
+use App\Enums\RoomPhotoTypes;
 use App\Enums\RoomStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -38,35 +39,32 @@ class UpdateRoomRequest extends FormRequest
             ],
 
             // extra
-            'deleted_image_ids' => ['nullable', 'array'],
-            'deleted_image_ids.*' => [
-                'integer',
-            ],
-
-            'images' => ['nullable', 'array', 'max:5'],
+            'images' => 'array|max:' . config('room.max_photo_upload'),
+            'images.*' => ['nullable'],
 
             'images.*.id' => [
                 'nullable',
                 'integer',
-                function ($attribute, $value, $fail) {
-                    if (in_array($value, $this->input('deleted_image_ids', []))) {
-                        $fail("ID {$value} đang nằm trong danh sách xóa, không thể sắp xếp.");
-                    }
-                },
+                'distinct:ignore_null',
+            ],
+
+            'images.*.type' => [
+                'nullable',
+                new Enum(RoomPhotoTypes::class),
             ],
 
             'images.*.file' => [
-                'required_if:images.*.id,null',
-                'nullable',
                 'image',
                 'mimes:jpeg,png,jpg',
-                'max:2048'
+                'max:2048',
             ],
 
-            'images.*.file_name' => [
-                'required_if:images.*.id,null',
-                'nullable',
-                'string'
+            'images.*.order' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:' . config('room.max_photo_upload'),
+                'distinct',
             ],
         ];
     }
